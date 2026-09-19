@@ -9,6 +9,7 @@ This project automates the process of handling customer support emails using AI.
 The workflow receives incoming emails, identifies whether they are customer-support related, and uses an AI Agent powered by Google Gemini to generate an appropriate response.
 
 ## 🔄 Workflow
+![AI Customer Support Automation Workflow](Workflow.png)
 
 Gmail Trigger → Text Classifier → AI Agent → Gmail Reply
 
