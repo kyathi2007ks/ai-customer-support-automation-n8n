@@ -1,0 +1,208 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputText": "={{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Customer Support",
+              "description": "Emails asking for help, reporting a problem, or requesting assistance with an order, account, service, payment, delivery, or technical issue."
+            },
+            {
+              "category": "Not Customer Support",
+              "description": "Emails that are not customer support requests, such as newsletters, advertisements, promotions, spam, or unrelated emails."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Classify the email into exactly one of the provided categories.\n\nChoose \"Customer Support\" when the email is from a customer requesting help or reporting a problem with an order, product, service, payment, refund, delivery, account, technical issue, complaint, or any other customer-related issue.\n\nChoose \"Not Customer Support\" when the email is a newsletter, advertisement, promotion, spam, internal message, or unrelated email.\n\nReturn only the classification result in the required JSON format. Do not explain your answer."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        0
+      ],
+      "id": "b0cc4bf2-560f-48be-ae29-bf4058ec2db1",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        208
+      ],
+      "id": "8a2fe126-3160-4717-9e8b-08cbcdd447dd",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sp0etNeas4Qs8fQP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read the customer email below and write a professional customer-support reply.\n\nIMPORTANT RULES:\n1. Return ONLY valid HTML email body content.\n2. Do NOT include a subject line.\n3. Do NOT include placeholders such as [Customer Name], [Order Number], [Your Name], etc.\n4. Do NOT explain your answer.\n5. Use proper HTML formatting:\n   - <p> for paragraphs\n   - <strong> for important information\n   - <ul> and <li> when listing requested information\n6. Keep the tone polite, professional, empathetic, and concise.\n7. Do not invent order numbers, names, tracking numbers, refunds, or other facts.\n8. Sign off as \"Customer Support Team\".\n9. Return only the HTML body.\n\nCustomer email:\n{{ $('Gmail Trigger').item.json.snippet }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        592,
+        -96
+      ],
+      "id": "c8c0c437-bf39-424c-b670-a519bdfcb8c8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        128
+      ],
+      "id": "61cdf743-d58a-4f17-b6c5-3493b73337e9",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sp0etNeas4Qs8fQP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "96a4597a-0d4f-477b-998b-f23d64f24abf",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bTU73KvZydAqAgpu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Gmail Trigger').item.json.From }}",
+        "subject": "Re: Your Customer Support Request",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "41ef48ff-bd4a-4140-a225-0a1059913e4b",
+      "name": "Send a message",
+      "webhookId": "2ee5ff39-6b30-465e-82c6-7f02ec31a40b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bTU73KvZydAqAgpu",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9dea7896-4356-44ef-9f2d-028b8caf63b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ba12bf0520ac8862ff7611301ddabe9fd02aee18dfaa8db5e0870283a2c4d6ab"
+  },
+  "nodeGroups": [],
+  "id": "grFjEQOHoQkmRV1y",
+  "tags": []
+}
